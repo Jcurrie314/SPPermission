@@ -35,6 +35,13 @@ class SPPermissionActionButton: UIButton {
                 self.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .bold)
                 self.contentEdgeInsets = UIEdgeInsets.init(top: 6, left: 15, bottom: 6, right: 15)
                 break
+            case .error:
+                self.backgroundColor = self.errorColor
+                self.layer.borderWidth = 0
+                self.setTitleColorForTwoState(UIColor.white)
+                self.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .bold)
+                self.contentEdgeInsets = UIEdgeInsets.init(top: 6, left: 15, bottom: 6, right: 15)
+                break
             case .select:
                 self.backgroundColor = self.baseColor
                 self.layer.borderWidth = 0
@@ -47,6 +54,12 @@ class SPPermissionActionButton: UIButton {
     }
     
     var baseColor: UIColor = SPPermissionStyle.DefaultColors.blue {
+        didSet {
+            let currentStyle = self.style
+            self.style = currentStyle
+        }
+    }
+    var errorColor: UIColor = SPPermissionStyle.DefaultColors.red {
         didSet {
             let currentStyle = self.style
             self.style = currentStyle
@@ -89,6 +102,7 @@ class SPPermissionActionButton: UIButton {
     enum Style {
         case base
         case select
+        case error
     }
     
     private func setTitleColorForTwoState(_ color: UIColor) {

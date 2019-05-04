@@ -98,6 +98,7 @@ public class SPPermissionDialogController: UIViewController {
                 permission: permission,
                 title: (self.dataSource?.name?(for: permission) ?? permission.name),
                 subtitle: (self.dataSource?.description?(for: permission) ?? self.description(for: permission)),
+                deniedTitle: self.dataSource?.allowTitle ?? "Denied",
                 allowTitle: self.dataSource?.allowTitle ?? "Allow",
                 allowedTitle: self.dataSource?.allowedTitle ?? "Allowed",
                 image: self.dataSource?.image?(for: permission)
@@ -119,8 +120,8 @@ public class SPPermissionDialogController: UIViewController {
         self.view.addSubview(self.areaView)
         self.areaView.layer.anchorPoint = CGPoint.init(x: 0.5, y: 0.5)
         
-        self.closeButton.backgroundColor = self.colorScheme.white
-        self.closeButton.color = self.colorScheme.base
+        self.closeButton.backgroundColor = .blue
+        self.closeButton.color = .white
         self.closeButton.widthIconFactor = 0.36
         self.closeButton.heightIconFactor = 0.36
         self.closeButton.alpha = 0
@@ -170,11 +171,21 @@ public class SPPermissionDialogController: UIViewController {
                     )
                     alertController.addAction(UIAlertAction.init(title: self.dataSource?.cancelTitle ?? "Cancel", style: UIAlertAction.Style.cancel, handler: nil))
                     alertController.addAction(UIAlertAction.init(title: self.dataSource?.settingsTitle ?? "Settings", style: UIAlertAction.Style.default, handler: { (action) in
-                        
+
                         UIApplication.shared.open(
                             URL.init(string: UIApplication.openSettingsURLString)!,
                             options: [:],
-                            completionHandler: nil
+                            completionHandler: {  [weak self] success in
+                                guard let s_self = self else { return }
+                                permissionView?.updateStyle()
+                                if success {
+                                    if s_self.permissions.last == permission {
+                                        SPPermissionStyle.Delay.wait(0.2, closure: {
+                                            s_self.hide(withDialog: true)
+                                        })
+                                    }
+                                }
+                            }
                         )
                         
                     }))
@@ -198,14 +209,12 @@ public class SPPermissionDialogController: UIViewController {
             self.isHiddenStatusBar = true
             self.areaView.center = CGPoint.init(
                 x: self.view.center.x,
-                y: self.view.center.y * 1.2
+                y: self.view.center.y
             )
             SPPermissionStyle.Animation.base(0.8, animations: {
                 self.backgroundView.setGradeAlpha(0.07, blurRaius: 4)
             })
             SPPermissionStyle.Delay.wait(0.21, closure: {
-                self.snapBehavior = UISnapBehavior(item: self.areaView, snapTo: self.areaCenter)
-                self.animator.addBehavior(self.snapBehavior)
                 SPPermissionStyle.Animation.base(0.3, animations: {
                     self.areaView.alpha = 1
                 })
@@ -280,10 +289,20 @@ public class SPPermissionDialogController: UIViewController {
     
     private func updateLayout(with size: CGSize) {
         self.animator.removeAllBehaviors()
-        
+
+        self.backgroundView.frame = CGRect.init(origin: .zero, size: size)
+        var areaViewWidth = size.width - 20 * 2
+        if areaViewWidth > 380 {
+            areaViewWidth = 380
+        }
+        self.areaView.layoutWidth = areaViewWidth
+        self.areaView.frame = CGRect.init(origin: self.areaView.frame.origin, size: CGSize.init(width: self.areaView.frame.width, height: self.areaView.layoutHeight))
+        self.areaView.center = self.areaCenter
+
+
         self.closeButton.frame = CGRect.init(x: 0, y: 0, width: 35, height: 35)
-        self.closeButton.frame.origin.x = size.width - 27 - self.closeButton.frame.width
-        self.closeButton.frame.origin.y = 23
+        self.closeButton.frame.origin.x = areaView.frame.maxX - self.closeButton.frame.width - 10
+        self.closeButton.frame.origin.y = areaView.frame.minY + 10
         self.closeButton.layer.cornerRadius = self.closeButton.frame.height / 2
         let shadowPath = UIBezierPath.init(
             roundedRect: CGRect.init(x: 0, y: 9, width: self.closeButton.frame.width, height: self.closeButton.frame.height),
@@ -295,16 +314,8 @@ public class SPPermissionDialogController: UIViewController {
         self.closeButton.layer.shadowRadius = 17
         self.closeButton.layer.masksToBounds = false
         self.closeButton.layer.shadowPath = shadowPath.cgPath
-        
-        self.backgroundView.frame = CGRect.init(origin: .zero, size: size)
-        var areaViewWidth = size.width - 20 * 2
-        if areaViewWidth > 380 {
-            areaViewWidth = 380
-        }
-        self.areaView.layoutWidth = areaViewWidth
-        self.areaView.frame = CGRect.init(origin: self.areaView.frame.origin, size: CGSize.init(width: self.areaView.frame.width, height: self.areaView.layoutHeight))
-        self.areaView.center = self.areaCenter
-        
+
+
         var bottomLabelWidth: CGFloat = size.width * 0.6
         if bottomLabelWidth > 230 {
             bottomLabelWidth = 230

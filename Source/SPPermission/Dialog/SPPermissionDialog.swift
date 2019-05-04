@@ -31,12 +31,18 @@ extension SPPermission {
             controller.delegate = delegate
             controller.dataSource = dataSource
             controller.colorSource = dataSource as? SPPermissionDialogColorSource
-            
-            if let tabBarController = viewController.tabBarController {
-                controller.present(on: tabBarController)
-            } else {
-                controller.present(on: viewController)
+            if var topController = UIApplication.shared.keyWindow?.rootViewController {
+                while let presentedViewController = topController.presentedViewController {
+                    topController = presentedViewController
+                }
+                controller.modalPresentationStyle = .overFullScreen
+                topController.present(controller, animated: true, completion: nil)
             }
+//            if let tabBarController = viewController.tabBarController {
+//                controller.present(on: tabBarController)
+//            } else {
+//                controller.present(on: viewController)
+//            }
         }
         
         private init() {}
